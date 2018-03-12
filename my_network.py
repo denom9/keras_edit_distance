@@ -81,8 +81,8 @@ model = Model([input_a, input_b], distance)
 
 matrix_train1 = matrix_train1.reshape(words_number, letters, length_limit, 1)
 matrix_train2 = matrix_train2.reshape(words_number, letters, length_limit, 1)
-matrix_val1 = matrix_train1.reshape(words_number, letters, length_limit, 1)
-matrix_val2 = matrix_train2.reshape(words_number, letters, length_limit, 1)
+matrix_val1 = matrix_val1.reshape(words_number, letters, length_limit, 1)
+matrix_val2 = matrix_val2.reshape(words_number, letters, length_limit, 1)
 labels_train = np.array(labels_train)
 labels_val = np.array(labels_val)
 
