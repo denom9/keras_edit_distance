@@ -96,15 +96,6 @@ model.fit([matrix_train1, matrix_train2], labels_train,
           epochs=epochs,
           validation_data=([matrix_val1, matrix_val2], labels_val))
 
-output_pred = model.predict([matrix_train1, matrix_train2])
-int_pred = np.rint(output_pred)
-int_pred = int_pred.astype(int)
-tr_acc = mse(labels_train, int_pred)
-output_pred = model.predict([matrix_val1, matrix_val2])
-int_pred = np.rint(output_pred)
-int_pred = int_pred.astype(int)
-te_acc = mse(labels_val, int_pred)
-
 score = model.evaluate([matrix_val1, matrix_val2], labels_val, verbose=0)
 print('Test loss evaluation:', score[0])
 print('Test accuracy evaluation:', score[1])
@@ -112,5 +103,4 @@ print('Test accuracy evaluation:', score[1])
 # saving model
 model.save("model.h5")
 
-print('Errore quadratico medio sul training set: %0.2f%%' % tr_acc)
-print('Errore quadratico medio sul validation set: %0.2f%%' % te_acc)
+print(mt.tester_matrix(matrix_val1, matrix_val2, labels_val, model, words_number))
