@@ -1,7 +1,7 @@
 import numpy as np
 from keras.models import load_model
 
-import input_processing as w
+import utilities as w
 
 alphabet = []
 for letter in range(97, 123):
