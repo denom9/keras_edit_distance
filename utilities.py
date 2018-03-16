@@ -3,6 +3,8 @@ from __future__ import print_function
 
 import random
 import numpy as np
+import string
+import editdistance as e
 
 def LD(s, t):
     if s == "":
@@ -33,7 +35,7 @@ def create_wordlist(words, number):
 def create_labels(wordlist1, wordlist2, number):
     labels = []
     for i in range(number):
-        labels.append(LD(wordlist1[i], wordlist2[i]))
+        labels.append(e.eval(wordlist1[i], wordlist2[i]))
     return labels
 
 
@@ -104,7 +106,7 @@ def gen_LD(word, dist):
     new_word = list(word)
 
     for _ in range(dist):
-        choice = random.randint(0, 1)
+        choice = 0#random.randint(0, 1)
 
         new_pos = random.randint(0, len(new_word) - 1)
         if choice == 0: #sostituzione
@@ -161,3 +163,25 @@ def tester_matrix(input1, input2, labels, model, words):
     for f in range(words):
         tester_matrix[0][t[f][0]][labels[f]] = tester_matrix[0][t[f][0]][labels[f]] + 1
     return tester_matrix
+
+
+def gen_random_wordlist(listlen):
+    wordlist = []
+    for i in range(listlen):
+        length = random.randint(3, 8) #lunghezza parola
+        word = ''
+        for _ in range(length):
+            word += random.choice(string.ascii_lowercase) #genero parola a lettere casuali
+        wordlist.append(word)
+    return wordlist
+
+
+def gen_LD_wordlist(base_list,listlen):
+    scales = listlen / 8
+    ld_list = []
+    dist = 0
+    for i in range(listlen):
+        if i > scales * (dist+1): dist += 1
+        #dist = random.randint(0,8)
+        ld_list.append(gen_LD(base_list[i], dist))
+    return ld_list

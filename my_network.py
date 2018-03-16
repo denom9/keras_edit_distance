@@ -11,10 +11,10 @@ from keras.models import load_model
 from nltk.corpus import words
 from sklearn.metrics import mean_squared_error as mse
 
-import utilities as u
+import utilities as w
 
-epochs = 10
-words_number = 10000
+epochs = 5
+words_number = 50000
 letters = 27
 length_limit = 24
 
@@ -51,17 +51,19 @@ alphabet = []
 for letter in range(97, 123):
     alphabet.append(chr(letter))
 
-words_to_train1 = u.create_wordlist(words_list, words_number)
-words_to_train2 = u.create_wordlist(words_list, words_number)
-words_to_val1 = u.create_wordlist(words_list2, words_number)
-words_to_val2 = u.create_wordlist(words_list2, words_number)
-labels_train = u.create_labels(words_to_train1, words_to_train2, words_number)
-labels_val = u.create_labels(words_to_val1, words_to_val2, words_number)
+words_to_train1 = w.gen_random_wordlist(words_number)
+words_to_train2 = w.gen_LD_wordlist(words_to_train1, words_number)
 
-matrix_train1 = np.array(u.create_matrix(words_to_train1, alphabet, words_number))
-matrix_train2 = np.array(u.create_matrix(words_to_train2, alphabet, words_number))
-matrix_val1 = np.array(u.create_matrix(words_to_val1, alphabet, words_number))
-matrix_val2 = np.array(u.create_matrix(words_to_val2, alphabet, words_number))
+words_to_val1 = w.create_wordlist(words_list2, words_number)
+words_to_val2 = w.create_wordlist(words_list2, words_number)
+
+labels_train = w.create_labels(words_to_train1, words_to_train2, words_number)
+labels_val = w.create_labels(words_to_val1, words_to_val2, words_number)
+
+matrix_train1 = np.array(w.create_matrix(words_to_train1, alphabet, words_number))
+matrix_train2 = np.array(w.create_matrix(words_to_train2, alphabet, words_number))
+matrix_val1 = np.array(w.create_matrix(words_to_val1, alphabet, words_number))
+matrix_val2 = np.array(w.create_matrix(words_to_val2, alphabet, words_number))
 
 input_shape = (letters, length_limit, 1)
 
@@ -103,4 +105,4 @@ print('Test accuracy evaluation:', score[1])
 # saving model
 model.save("model.h5")
 
-print(u.tester_matrix(matrix_val1, matrix_val2, labels_val, model, words_number))
+print(w.tester_matrix(matrix_val1, matrix_val2, labels_val, model, words_number))

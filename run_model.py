@@ -8,7 +8,7 @@ for letter in range(97, 123):
     alphabet.append(chr(letter))
 
 input1 = w.create_mInput("caso", alphabet)
-input2 = w.create_mInput("catol", alphabet)
+input2 = w.create_mInput("catoll", alphabet)
 
 input1 = np.array(input1)
 input2 = np.array(input2)
