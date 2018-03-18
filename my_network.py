@@ -69,8 +69,8 @@ matrix_val2 = np.array(w.create_matrix(words_to_val2, alphabet, words_number))
 #earlystop & checkpoint
 earlystop = EarlyStopping(monitor='val_binary_accuracy', min_delta=0.00001, patience=2,
                           verbose=1, mode='auto')
-checkpoint_callback = ModelCheckpoint('model' + '.h5', monitor='val_binary_accuracy', verbose=1,
-                                      save_best_only=True, mode='max')
+checkpoint_callback = ModelCheckpoint('model' + '.h5', monitor='val_loss', verbose=1,
+                                      save_best_only=True, mode='min')
 callbacks_list = [earlystop, checkpoint_callback]
 
 input_shape = (letters, length_limit, 1)
