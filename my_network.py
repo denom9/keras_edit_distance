@@ -10,6 +10,7 @@ from keras.models import Model
 from keras.models import load_model
 from nltk.corpus import words
 from sklearn.metrics import mean_squared_error as mse
+from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 import utilities as w
 
@@ -65,6 +66,13 @@ matrix_train2 = np.array(w.create_matrix(words_to_train2, alphabet, words_number
 matrix_val1 = np.array(w.create_matrix(words_to_val1, alphabet, words_number))
 matrix_val2 = np.array(w.create_matrix(words_to_val2, alphabet, words_number))
 
+#earlystop & checkpoint
+earlystop = EarlyStopping(monitor='val_binary_accuracy', min_delta=0.00001, patience=2,
+                          verbose=1, mode='auto')
+checkpoint_callback = ModelCheckpoint('model' + '.h5', monitor='val_binary_accuracy', verbose=1,
+                                      save_best_only=True, mode='max')
+callbacks_list = [earlystop, checkpoint_callback]
+
 input_shape = (letters, length_limit, 1)
 
 # network definition
@@ -96,13 +104,13 @@ model.compile(loss=losses.mean_squared_error, optimizer='sgd', metrics=[binary_a
 model.fit([matrix_train1, matrix_train2], labels_train,
           batch_size=32,
           epochs=epochs,
+          callbacks=callbacks_list,
           validation_data=([matrix_val1, matrix_val2], labels_val))
 
-score = model.evaluate([matrix_val1, matrix_val2], labels_val, verbose=0)
+new_model = load_model("model.h5")
+
+score = new_model.evaluate([matrix_val1, matrix_val2], labels_val, verbose=0)
 print('Test loss evaluation:', score[0])
 print('Test accuracy evaluation:', score[1])
 
-# saving model
-model.save("model.h5")
-
-print(w.tester_matrix(matrix_val1, matrix_val2, labels_val, model, words_number))
+print(w.tester_matrix(matrix_val1, matrix_val2, labels_val, new_model, words_number))
