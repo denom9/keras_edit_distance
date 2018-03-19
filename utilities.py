@@ -89,59 +89,32 @@ def create_mInput(word, alphabet):
         m.append(n)
     return m
 
+
 def gen_LD(word, dist):
     word_l = list(word)
-
-    if dist > len(word):
-        new_word = ''
-        for _ in range(dist):
-            new_letter = random.choice(string.ascii_lowercase)
-            while new_letter in word_l:
-                new_letter = random.choice(string.ascii_lowercase)
-            new_word += new_letter
-        return new_word
-
-    used_indexes = []
-    changes = [0] * len(word)
-    new_word = list(word)
-
-    for _ in range(dist):
-        choice = 0#random.randint(0, 1)
+    new_word = word_l
+    while ed.eval(word, new_word) != dist:
+        if len(new_word) == 8:
+            op = random.choice([0, 2])
+        else:
+            if len(new_word) == 1:
+                op = random.choice([0, 1])
+            else:
+                op = random.choice([0, 1, 2])
 
         new_pos = random.randint(0, len(new_word) - 1)
-        if choice == 0: #sostituzione
-            while changes[new_pos] == 1 or new_pos in used_indexes:
-                new_pos = random.randint(0, len(new_word) - 1)
-            changes[new_pos] = 1
-            if new_pos not in used_indexes:
-                used_indexes.append(new_pos)
-            old_letter = new_word[new_pos]
+
+        if op == 0:  # sostituzione
             new_letter = random.choice(string.ascii_lowercase)
-            while new_letter == old_letter or new_letter in word_l:
-                new_letter = random.choice(string.ascii_lowercase)
             new_word[new_pos] = new_letter
 
-        if choice == 1: #inserimento
-            changes.insert(new_pos, 1)
-            word_l.insert(new_pos,0)
-            if new_pos not in used_indexes:
-                used_indexes.append(new_pos)
+        if op == 1:  # inserimento
             new_letter = random.choice(string.ascii_lowercase)
-            while new_letter in word_l:
-                new_letter = random.choice(string.ascii_lowercase)
             new_word.insert(new_pos, new_letter)
 
-        if choice == 2: #cancellazione
-            while changes[new_pos] == 1 or new_pos in used_indexes:
-                new_pos = random.randint(0, len(new_word) - 1)
+        if op == 2:  # cancellazione
             del new_word[new_pos]
-            del changes[new_pos]
 
-        #print(choice)
-        #print(changes)
-        #print(used_indexes)
-
-    new_word = ''.join(new_word)
     return new_word
 
 
