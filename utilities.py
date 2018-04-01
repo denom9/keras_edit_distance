@@ -4,21 +4,9 @@ from __future__ import print_function
 import random
 import numpy as np
 import string
-import editdistance as e
-
-def LD(s, t):
-    if s == "":
-        return len(t)
-    if t == "":
-        return len(s)
-    if s[-1] == t[-1]:
-        cost = 0
-    else:
-        cost = 1
-    res = min([LD(s[:-1], t) + 1,
-               LD(s, t[:-1]) + 1,
-               LD(s[:-1], t[:-1]) + cost])
-    return res
+import editdistance as ed
+from keras.models import load_model
+import nltk
 
 
 def create_wordlist(words, number):
@@ -35,7 +23,7 @@ def create_wordlist(words, number):
 def create_labels(wordlist1, wordlist2, number):
     labels = []
     for i in range(number):
-        labels.append(e.eval(wordlist1[i], wordlist2[i]))
+        labels.append(ed.eval(wordlist1[i], wordlist2[i]))
     return labels
 
 
@@ -64,30 +52,6 @@ def create_matrix(wordlist, alphabet, number):
             m.append(n)
         matrix1.append(m)
     return matrix1
-
-
-def create_mInput(word, alphabet):
-    rows = 27
-    columns = 24
-    m = []
-    for i in range(rows):
-        n = []
-        for j in range(columns):
-            if i == 0:
-                if len(word) > j:
-                    n.append(0)
-                else:
-                    n.append(1)
-            else:
-                if len(word) > j:
-                    if (word)[j] == alphabet[i - 1]:
-                        n.append(1)
-                    else:
-                        n.append(0)
-                else:
-                    n.append(0)
-        m.append(n)
-    return m
 
 
 def gen_LD(word, dist):
@@ -136,6 +100,166 @@ def tester_matrix(input1, input2, labels, model, words):
     for f in range(words):
         tester_matrix[0][t[f][0]][labels[f]] = tester_matrix[0][t[f][0]][labels[f]] + 1
     return tester_matrix
+
+
+def check_accuracy(model_name, alphabet):
+    number = 10000
+    reuters = nltk.corpus.reuters.words()
+    reuters_text = nltk.Text(reuters)
+    reuters_words = reuters_text.tokens
+
+    gutenberg = nltk.corpus.gutenberg.words()
+    gutenberg_text = nltk.Text(gutenberg)
+    gutenberg_words = gutenberg_text.tokens
+
+    brown = nltk.corpus.brown.words()
+    brown_text = nltk.Text(brown)
+    brown_words = brown_text.tokens
+
+    words_to_val1 = create_wordlist(reuters_words, number)
+    words_to_val2 = create_wordlist(reuters_words, number)
+    matrix_val1 = np.array(create_matrix(words_to_val1, alphabet, number))
+    matrix_val2 = np.array(create_matrix(words_to_val2, alphabet, number))
+    matrix_val1 = matrix_val1.reshape(number, 27, 24, 1)
+    matrix_val2 = matrix_val2.reshape(number, 27, 24, 1)
+    labels_val = create_labels(words_to_val1, words_to_val2, number)
+    model = load_model(model_name)
+    score = model.evaluate([matrix_val1, matrix_val2], labels_val, verbose=0)
+    print('Testing reuters corpus')
+    print('Test loss evaluation:', score[0])
+    print('Test accuracy evaluation:', score[1])
+    print(tester_matrix(matrix_val1, matrix_val2, labels_val, model, number))
+
+    words_to_val1 = create_wordlist(gutenberg_words, number)
+    words_to_val2 = create_wordlist(gutenberg_words, number)
+    matrix_val1 = np.array(create_matrix(words_to_val1, alphabet, number))
+    matrix_val2 = np.array(create_matrix(words_to_val2, alphabet, number))
+    matrix_val1 = matrix_val1.reshape(number, 27, 24, 1)
+    matrix_val2 = matrix_val2.reshape(number, 27, 24, 1)
+    labels_val = create_labels(words_to_val1, words_to_val2, number)
+    model = load_model(model_name)
+    score = model.evaluate([matrix_val1, matrix_val2], labels_val, verbose=0)
+    print('Testing gutenberg corpus')
+    print('Test loss evaluation:', score[0])
+    print('Test accuracy evaluation:', score[1])
+    print(tester_matrix(matrix_val1, matrix_val2, labels_val, model, number))
+
+    words_to_val1 = create_wordlist(brown_words, number)
+    words_to_val2 = create_wordlist(brown_words, number)
+    matrix_val1 = np.array(create_matrix(words_to_val1, alphabet, number))
+    matrix_val2 = np.array(create_matrix(words_to_val2, alphabet, number))
+    matrix_val1 = matrix_val1.reshape(number, 27, 24, 1)
+    matrix_val2 = matrix_val2.reshape(number, 27, 24, 1)
+    labels_val = create_labels(words_to_val1, words_to_val2, number)
+    model = load_model(model_name)
+    score = model.evaluate([matrix_val1, matrix_val2], labels_val, verbose=0)
+    print('Testing brown corpus')
+    print('Test loss evaluation:', score[0])
+    print('Test accuracy evaluation:', score[1])
+    print(tester_matrix(matrix_val1, matrix_val2, labels_val, model, number))
+
+    return
+
+
+def check_diff_ed(model_name, alphabet):
+    number = 10000
+    reuters = nltk.corpus.reuters.words()
+    reuters_text = nltk.Text(reuters)
+    reuters_words = reuters_text.tokens
+
+    gutenberg = nltk.corpus.gutenberg.words()
+    gutenberg_text = nltk.Text(gutenberg)
+    gutenberg_words = gutenberg_text.tokens
+
+    brown = nltk.corpus.brown.words()
+    brown_text = nltk.Text(brown)
+    brown_words = brown_text.tokens
+
+    wordlist = []
+    wordlist2 = []
+    print('Testing reuters corpus')
+    for j in range(8):
+        wordlist.clear()
+        wordlist2.clear()
+        for i in range(number):
+            randomWord = random.choice(reuters_words)
+            randomWord2 = random.choice(reuters_words)
+            randomWord = randomWord.lower()
+            randomWord2 = randomWord2.lower()
+            while not randomWord.isalpha() or not randomWord2.isalpha() or len(randomWord) > 8 or len(
+                    randomWord2) > 8 or ed.eval(randomWord, randomWord2) != (j + 1):
+                randomWord = random.choice(reuters_words)
+                randomWord2 = random.choice(reuters_words)
+                randomWord = randomWord.lower()
+                randomWord2 = randomWord2.lower()
+            wordlist.append(randomWord)
+            wordlist2.append(randomWord2)
+        matrix_val1 = np.array(create_matrix(wordlist, alphabet, number))
+        matrix_val2 = np.array(create_matrix(wordlist2, alphabet, number))
+        matrix_val1 = matrix_val1.reshape(number, 27, 24, 1)
+        matrix_val2 = matrix_val2.reshape(number, 27, 24, 1)
+        labels_val = create_labels(wordlist, wordlist2, number)
+        model = load_model(model_name)
+        score = model.evaluate([matrix_val1, matrix_val2], labels_val, verbose=0)
+        print('Accuracy on edit distance ', j + 1, ':', score[1])
+
+    wordlist = []
+    wordlist2 = []
+    print('Testing gutenberg corpus')
+    for j in range(8):
+        wordlist.clear()
+        wordlist2.clear()
+        for i in range(number):
+            randomWord = random.choice(gutenberg_words)
+            randomWord2 = random.choice(gutenberg_words)
+            randomWord = randomWord.lower()
+            randomWord2 = randomWord2.lower()
+            while not randomWord.isalpha() or not randomWord2.isalpha() or len(randomWord) > 8 or len(
+                    randomWord2) > 8 or ed.eval(randomWord, randomWord2) != (j + 1):
+                randomWord = random.choice(gutenberg_words)
+                randomWord2 = random.choice(gutenberg_words)
+                randomWord = randomWord.lower()
+                randomWord2 = randomWord2.lower()
+            wordlist.append(randomWord)
+            wordlist2.append(randomWord2)
+        matrix_val1 = np.array(create_matrix(wordlist, alphabet, number))
+        matrix_val2 = np.array(create_matrix(wordlist2, alphabet, number))
+        matrix_val1 = matrix_val1.reshape(number, 27, 24, 1)
+        matrix_val2 = matrix_val2.reshape(number, 27, 24, 1)
+        labels_val = create_labels(wordlist, wordlist2, number)
+        model = load_model(model_name)
+        score = model.evaluate([matrix_val1, matrix_val2], labels_val, verbose=0)
+        print('Accuracy on edit distance ', j + 1, ':', score[1])
+
+    wordlist = []
+    wordlist2 = []
+    print('Testing brown corpus')
+    for j in range(8):
+        wordlist.clear()
+        wordlist2.clear()
+        for i in range(number):
+            randomWord = random.choice(brown_words)
+            randomWord2 = random.choice(brown_words)
+            randomWord = randomWord.lower()
+            randomWord2 = randomWord2.lower()
+            while not randomWord.isalpha() or not randomWord2.isalpha() or len(randomWord) > 8 or len(
+                    randomWord2) > 8 or ed.eval(randomWord, randomWord2) != (j + 1):
+                randomWord = random.choice(brown_words)
+                randomWord2 = random.choice(brown_words)
+                randomWord = randomWord.lower()
+                randomWord2 = randomWord2.lower()
+            wordlist.append(randomWord)
+            wordlist2.append(randomWord2)
+        matrix_val1 = np.array(create_matrix(wordlist, alphabet, number))
+        matrix_val2 = np.array(create_matrix(wordlist2, alphabet, number))
+        matrix_val1 = matrix_val1.reshape(number, 27, 24, 1)
+        matrix_val2 = matrix_val2.reshape(number, 27, 24, 1)
+        labels_val = create_labels(wordlist, wordlist2, number)
+        model = load_model(model_name)
+        score = model.evaluate([matrix_val1, matrix_val2], labels_val, verbose=0)
+        print('Accuracy on edit distance ', j + 1, ':', score[1])
+
+        return
 
 
 def gen_random_wordlist(listlen):
