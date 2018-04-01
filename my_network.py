@@ -9,13 +9,12 @@ from keras.layers import Input, Dense, Lambda, Conv2D, ZeroPadding2D, Flatten
 from keras.models import Model
 from keras.models import load_model
 from nltk.corpus import words
-from sklearn.metrics import mean_squared_error as mse
 from keras.callbacks import EarlyStopping, ModelCheckpoint
+import utilities as u
+import random
 
-import utilities as w
-
-epochs = 5
-words_number = 50000
+epochs = 20
+words_number = 50016
 letters = 27
 length_limit = 24
 
@@ -44,32 +43,37 @@ def binary_accuracy(output_true, output_pred):
 
 
 words_list = words.words()
-book = nltk.corpus.gutenberg.words(u'austen-persuasion.txt')
-book_text = nltk.Text(book)
-words_list2 = book_text.tokens
+words_list2 = words.words()
 
 alphabet = []
 for letter in range(97, 123):
     alphabet.append(chr(letter))
 
-words_to_train1 = w.gen_random_wordlist(words_number)
-words_to_train2 = w.gen_LD_wordlist(words_to_train1, words_number)
+words_to_train1 = u.create_wordlist(words_list, words_number_train)
+words_to_train2 = u.create_wordlist(words_list, words_number_train)
+words_to_val1 = u.create_wordlist(words_list2, words_number_val)
+words_to_val2 = u.create_wordlist(words_list2, words_number_val)
 
-words_to_val1 = w.create_wordlist(words_list2, words_number)
-words_to_val2 = w.create_wordlist(words_list2, words_number)
+'Qui è possibile cambiare il modo in cui è scelta la seconda parola della coppia per il training set'
+for i in range(words_number_train):
+    words_to_train2[i] = u.gen_LD(words_to_train1[i], random.randint(1, 8))
+
+'Qui è possibile cambiare il modo in cui è scelta la seconda parola della coppia per il validation set'
+for i in range(words_number_val):
+    words_to_val2[i] = u.gen_LD(words_to_val1[i], random.randint(1, 8))
 
 labels_train = w.create_labels(words_to_train1, words_to_train2, words_number)
 labels_val = w.create_labels(words_to_val1, words_to_val2, words_number)
 
-matrix_train1 = np.array(w.create_matrix(words_to_train1, alphabet, words_number))
-matrix_train2 = np.array(w.create_matrix(words_to_train2, alphabet, words_number))
-matrix_val1 = np.array(w.create_matrix(words_to_val1, alphabet, words_number))
-matrix_val2 = np.array(w.create_matrix(words_to_val2, alphabet, words_number))
+matrix_train1 = np.array(u.create_matrix(words_to_train1, alphabet, words_number))
+matrix_train2 = np.array(u.create_matrix(words_to_train2, alphabet, words_number))
+matrix_val1 = np.array(u.create_matrix(words_to_val1, alphabet, words_number))
+matrix_val2 = np.array(u.create_matrix(words_to_val2, alphabet, words_number))
 
 #earlystop & checkpoint
 earlystop = EarlyStopping(monitor='val_binary_accuracy', min_delta=0.00001, patience=2,
                           verbose=1, mode='auto')
-checkpoint_callback = ModelCheckpoint('model' + '.h5', monitor='val_loss', verbose=1,
+checkpoint_callback = ModelCheckpoint('model_name' + '.h5', monitor='val_loss', verbose=1,
                                       save_best_only=True, mode='min')
 callbacks_list = [earlystop, checkpoint_callback]
 
@@ -96,8 +100,9 @@ matrix_val2 = matrix_val2.reshape(words_number, letters, length_limit, 1)
 labels_train = np.array(labels_train)
 labels_val = np.array(labels_val)
 
-# resuming model
-#model = load_model("model.h5")
+'per caricare il modello precedentemente allenato'
+# model = load_model("model_name.h5")
+
 # train
 model.compile(loss=losses.mean_squared_error, optimizer='sgd', metrics=[binary_accuracy])
 
@@ -107,10 +112,13 @@ model.fit([matrix_train1, matrix_train2], labels_train,
           callbacks=callbacks_list,
           validation_data=([matrix_val1, matrix_val2], labels_val))
 
-new_model = load_model("model.h5")
+new_model = load_model("model_name.h5")
 
 score = new_model.evaluate([matrix_val1, matrix_val2], labels_val, verbose=0)
 print('Test loss evaluation:', score[0])
 print('Test accuracy evaluation:', score[1])
 
-print(w.tester_matrix(matrix_val1, matrix_val2, labels_val, new_model, words_number))
+'in fase di test questo metodo consente di mostrare accuratezza sui 3 corpora'
+# u.check_accuracy('model_name.h5', alphabet)
+'in fase di test questo metodo consente di accuratezza dei vari edit distance(1-8) sui 3 corpora'
+# u.check_diff_ed('model_name.h5', alphabet)
